@@ -1,48 +1,43 @@
 package com.yasin.drawingapp
 
-import android.app.Dialog
-import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
-import android.view.View
-import android.widget.Button
-import android.widget.EditText
 import android.Manifest
 import android.app.AlertDialog
-import android.content.DialogInterface
+import android.app.Dialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import android.media.Image
+import android.graphics.PorterDuff
 import android.media.MediaScannerConnection
-import android.os.Message
-import android.provider.ContactsContract.CommonDataKinds.Im
+import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
+import android.view.View
+import android.widget.Button
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.get
 import androidx.lifecycle.lifecycleScope
-import com.skydoves.colorpickerview.ColorEnvelope
-import com.skydoves.colorpickerview.ColorPickerDialog
-import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 class MainActivity : AppCompatActivity() {
@@ -83,7 +78,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -151,13 +145,8 @@ class MainActivity : AppCompatActivity() {
         ) {
             showRationaleDialog("Drawing App", "Drawing App needs access to your external storage")
         }
-        if (ActivityCompat.shouldShowRequestPermissionRationale(
-                this,
-                Manifest.permission.READ_MEDIA_IMAGES
-            )
-        ) {
-            showRationaleDialog("Drawing App", "Drawing App needs access to your external storage")
-        } else {
+
+        else {
             requestPermission.launch(
                 arrayOf(
                     Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -259,42 +248,63 @@ class MainActivity : AppCompatActivity() {
         val returnedBitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(returnedBitmap)
         val bgDrawable = view.background
-        if (bgDrawable != null) {
-            bgDrawable.draw(canvas)
-        } else {
-            canvas.drawColor(Color.WHITE)
+
+        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+
+        bgDrawable?.let {
+            it.setBounds(0, 0, view.width, view.height)
+            it.draw(canvas)
         }
+
         view.draw(canvas)
 
         return returnedBitmap
     }
 
-    private suspend fun saveBitmapFile(mBitmap: Bitmap?): String{
+
+    private suspend fun saveBitmapFile(mBitmap: Bitmap?): String {
         var result = ""
-        withContext(Dispatchers.IO){
-            if(mBitmap != null){
-                try{
+        withContext(Dispatchers.IO) {
+            if (mBitmap != null) {
+                try {
                     val bytes = ByteArrayOutputStream()
                     mBitmap.compress(Bitmap.CompressFormat.PNG, 90, bytes)
-                    val f = File(externalCacheDir?.absoluteFile.toString() + File.separator + "DrawingApp_" + System.currentTimeMillis() / 1000 + ".png")
-                    val fo = FileOutputStream(f)
+                    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(
+                        Date()
+                    )
+                    val imageFileName = "DrawingApp_$timeStamp.png"
+                    val storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+                    val imageFile = File(storageDir, imageFileName)
+                    val fo = FileOutputStream(imageFile)
                     fo.write(bytes.toByteArray())
                     fo.close()
 
-                    result = f.absolutePath
+                    MediaScannerConnection.scanFile(
+                        applicationContext,
+                        arrayOf(imageFile.absolutePath),
+                        null
+                    ) { path, uri -> }
 
-                    runOnUiThread{
+                    result = imageFile.absolutePath
+
+                    runOnUiThread {
                         cancelProgressDialog()
-                        if(result.isNotEmpty()){
-                            Toast.makeText(this@MainActivity, "File saved successfully: $result", Toast.LENGTH_SHORT).show()
+                        if (result.isNotEmpty()) {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "File saved successfully: $result",
+                                Toast.LENGTH_SHORT
+                            ).show()
                             shareImage(result)
-                        }
-                        else{
-                            Toast.makeText(this@MainActivity, "Something went wrong", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Something went wrong",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
-                }
-                catch(e: Exception){
+                } catch (e: Exception) {
                     result = ""
                     e.printStackTrace()
                 }

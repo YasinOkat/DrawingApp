@@ -4,14 +4,18 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PointF
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import androidx.appcompat.widget.AppCompatImageView
 import com.skydoves.colorpickerview.ColorEnvelope
 import com.skydoves.colorpickerview.ColorPickerDialog
 import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener
@@ -143,8 +147,6 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
         color = Color.parseColor(newColor)
         mDrawPaint!!.color = color
     }
-
-
 
     internal inner class CustomPath(var color: Int, var brushThickness: Float) : Path(){
 

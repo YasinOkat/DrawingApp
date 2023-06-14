@@ -4,7 +4,7 @@
         <shape
             android:shape="oval">
             <stroke
-                android:width="2dp"
+                android:width="10dp"
                 android:color="#FF999999"/>
 
             <padding
@@ -15,19 +15,5 @@
         </shape>
     </item>
 
-    <item>
-        <shape>
-            <padding
-                android:bottom="90dp"
-                android:left="90dp"
-                android:right="90dp"
-                android:top="90dp"/>
-            <stroke
-                android:width="2dp"
-                android:color="#FF999999"/>
-            <solid android:color="#00000000"/>
-            <corners android:radius="10dp"/>
-        </shape>
-    </item>
 
 </layer-list>
